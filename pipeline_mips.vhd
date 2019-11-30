@@ -280,14 +280,14 @@ architecture struct of controller is
         D: in std_logic_vector(N-1 downto 0);
         Q: out std_logic_vector (N-1 downto 0) );
   end component;
-  signal aluop                                                                                   : STD_LOGIC_VECTOR(1 downto 0);
-  signal RegWriteD, MemtoRegD, MemWriteD, BranchD, ALUSrcD, RegDstD, BranchNotEqualD			 : STD_LOGIC;
-  signal ALUControlD																			 : STD_LOGIC_VECTOR(2 downto 0);
-  signal s_regE                                                                                  : STD_LOGIC_VECTOR(9 downto 0);
-  signal s_regM                                                                                  : STD_LOGIC_VECTOR(4 downto 0);
-  signal s_regW                                                                                  : STD_LOGIC_VECTOR(1 downto 0);
-  signal branch                                                                                  : STD_LOGIC;
-  signal branch_notequal                                                                         : STD_LOGIC;
+  signal aluop                                                                      	: STD_LOGIC_VECTOR(1 downto 0);
+  signal RegWriteD, MemtoRegD, MemWriteD, BranchD, ALUSrcD, RegDstD, BranchNotEqualD	: STD_LOGIC;
+  signal ALUControlD																	: STD_LOGIC_VECTOR(2 downto 0);
+  signal s_regE                                                                     	: STD_LOGIC_VECTOR(9 downto 0);
+  signal s_regM                                                                     	: STD_LOGIC_VECTOR(4 downto 0);
+  signal s_regW                                                                     	: STD_LOGIC_VECTOR(1 downto 0);
+  signal branch                                                                     	: STD_LOGIC;
+  signal branch_notequal                                                            	: STD_LOGIC;
 
 begin
   md: maindec port map(op, MemtoRegD, MemWriteD, BranchD,
@@ -311,7 +311,7 @@ begin
   -- Depois do segundo registrador
   memwrite         <= s_regM(2);
   branch           <= s_regM(3);
-  branch_notequal  <= s_regM(9);
+  branch_notequal  <= s_regM(4);
   
   -- Depois do terceiro registrador
   regwrite         <= s_regW(0);
