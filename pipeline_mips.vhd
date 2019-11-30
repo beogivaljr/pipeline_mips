@@ -283,7 +283,7 @@ architecture struct of controller is
   signal aluop                                                                                   : STD_LOGIC_VECTOR(1 downto 0);
   signal RegWriteD, MemtoRegD, MemWriteD, BranchD, ALUSrcD, RegDstD, BranchNotEqualD			 : STD_LOGIC;
   signal ALUControlD																			 : STD_LOGIC_VECTOR(2 downto 0);
-  signal s_regE                                                                                  : STD_LOGIC_VECTOR(7 downto 0);
+  signal s_regE                                                                                  : STD_LOGIC_VECTOR(9 downto 0);
   signal s_regM                                                                                  : STD_LOGIC_VECTOR(4 downto 0);
   signal s_regW                                                                                  : STD_LOGIC_VECTOR(1 downto 0);
   signal branch                                                                                  : STD_LOGIC;
@@ -294,7 +294,7 @@ begin
                        ALUSrcD, BranchNotEqualD, RegDstD, RegWriteD, jump, aluop);
   ad: aludec port map(funct, aluop, ALUControlD);
 
-  regE: registrador_n generic map (N => 8) port map (clk, '0', '1', RegWriteD & MemtoRegD & MemWriteD & BranchD & ALUControlD & ALUSrcD & RegDstD & BranchNotEqualD, s_regE);
+  regE: registrador_n generic map (N => 10) port map (clk, '0', '1', RegWriteD & MemtoRegD & MemWriteD & BranchD & ALUControlD & ALUSrcD & RegDstD & BranchNotEqualD, s_regE);
   
   regM: registrador_n generic map (N => 5) port map (clk, '0', '1', s_regE(3 downto 0) & s_regE(7), s_regM);
   
@@ -302,15 +302,16 @@ begin
   
   pcsrc <= (branch and zero) or (branch_notequal and not(zero));
   
+  -- Verificar se os vetores estão sendo alocados na ordem correta
   -- Depois do primeiro registrador
-  alucontrol       <= s_regE(4); -- Erro pq alucontrol é vetor e o s_regE(4) não
-  alusrc           <= s_regE(5);
-  regdst           <= s_regE(6);
+  alucontrol       <= s_regE(6 downto 4); 
+  alusrc           <= s_regE(7);
+  regdst           <= s_regE(8);
   
   -- Depois do segundo registrador
   memwrite         <= s_regM(2);
   branch           <= s_regM(3);
-  branch_notequal  <= s_regM(4);
+  branch_notequal  <= s_regM(9);
   
   -- Depois do terceiro registrador
   regwrite         <= s_regW(0);
