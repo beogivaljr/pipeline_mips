@@ -308,8 +308,8 @@ architecture struct of controller is
 			Q: out std_logic_vector (N-1 downto 0) );
 	end component;
 	signal aluop                                                                                   : STD_LOGIC_VECTOR(1 downto 0);
-	signal RegWriteD, MemtoRegD, MemWriteD, s_BranchD, ALUSrcD, RegDstD, BranchNotEqualD			 : STD_LOGIC;
-	signal ALUControlD																			 : STD_LOGIC_VECTOR(2 downto 0);
+	signal RegWriteD, MemtoRegD, MemWriteD, s_BranchD, ALUSrcD, RegDstD, BranchNotEqualD		   : STD_LOGIC;
+	signal ALUControlD																			   : STD_LOGIC_VECTOR(2 downto 0);
 	signal s_regE                                                                                  : STD_LOGIC_VECTOR(9 downto 0);
 	signal s_regM                                                                                  : STD_LOGIC_VECTOR(4 downto 0);
 	signal s_regW                                                                                  : STD_LOGIC_VECTOR(1 downto 0);
@@ -555,12 +555,12 @@ begin
 	se: signext port map(instr(15 downto 0), signimm);
 	
 	-- ALU logic
-	segundoMux4: mux4 generic map(32) port map(WriteDataE, WriteRegW&"000000000000000000000000000", ALUOutM, "00000000000000000000000000000000", ForwardBE, WriteDataE2);
+	segundoMux4: mux4 generic map(32) port map(WriteDataE, result, ALUOutM, "00000000000000000000000000000000", ForwardBE, WriteDataE2);
 	
 	srcbmux: mux2 generic map(32) port map(WriteDataE2, SignimmE, alusrc,
 		srcb);
 	
-	primeiroMux4: mux4 generic map(32) port map(SrcAE, WriteRegW&"000000000000000000000000000", ALUOutM, "00000000000000000000000000000000", ForwardAE, SrcAE2);
+	primeiroMux4: mux4 generic map(32) port map(SrcAE, result, ALUOutM, "00000000000000000000000000000000", ForwardAE, SrcAE2);
 	
 	mainalu: alu port map(SrcAE2, srcb, alucontrol, ALUOutE, ZeroE(0));
 	
