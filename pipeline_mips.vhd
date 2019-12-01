@@ -808,17 +808,13 @@ begin
 	end process;
 	
 	-- Logic for Stalls (pg. 597)
-	process(all) begin  
-		if (((RsD = RtE) or (RtD = RtE)) and MemtoRegE = '1') then lwstall <= '1'; else lwstall <= '0'; end if;
-		if ((BranchD = '1' or Branch_neD = '1') and RegWriteE = '1' and (WriteRegE = RsD or WriteRegE = RtD)) or ((BranchD = '1' or Branch_neD = '1') and MemtoRegM = '1' and (WriteRegM = RsD or WriteRegM = RtD)) then branchstall <= '1'; else branchstall <= '0'; end if;
-	end process;
-	StallD      <= lwstall or branchstall;
-	StallF      <= lwstall or branchstall;
-	FlushE      <= lwstall or branchstall;
-	
+	lwstall <= '1' when (((RsD = RtE) or (RtD = RtE)) and (MemtoRegE = '1')) else '0';
+	branchstall <= '1' when (((BranchD = '1' or Branch_neD = '1') and (RegWriteE = '1') and (WriteRegE = RsD or WriteRegE = RtD)) or ((BranchD = '1' or Branch_neD = '1') and (MemtoRegM = '1') and (WriteRegM = RsD or WriteRegM = RtD))) else '0';
+	StallD <= lwstall or branchstall;
+	StallF <= lwstall or branchstall;
+	FlushE <= lwstall or branchstall;
+
 	-- Logic for ForwardAD and Forward BD
-	process(all) begin
-		if (RsD /= "00000") and (RsD = WriteRegM) and RegWriteM = '1' then ForwardAD <= '1'; else ForwardAD <= '0'; end if;
-		if (RtD /= "00000") and (RtD = WriteRegM) and RegWriteM = '1' then ForwardBD <= '1'; else ForwardBD <= '0'; end if;
-	end process;
+	ForwardAD <= '1' when ((RsD /= "00000") and (RsD = WriteRegM) and (RegWriteM = '1')) else '0';
+	ForwardBD <= '1' when ((RtD /= "00000") and (RtD = WriteRegM) and (RegWriteM = '1')) else '0';
 end;
