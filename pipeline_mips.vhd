@@ -1,6 +1,12 @@
+-- Projeto pipeline_mips da disciplina PCS 3612 – Organização e Arquitetura de Computadores I
+-- Profa. Dra. Cíntia Borges Margi
+-- Alunos do grupo:
+-- Vinicius Oliveira Santos				- NUSP: 10336636
+-- Beogival Wagner Lucas Santos Junior	- NUSP: 08992836
+
 -- mips.vhd
 -- From Section 7.6 of Digital Design & Computer Architecture
--- Updated to VHDL 2008 26 July 2011 David_Harris@hmc.edu
+-- Updated to VHDL 2008 26 July 2011 David_Harris@hmc.edu	  
 
 library IEEE;
 use IEEE.STD_LOGIC_1164.all; use IEEE.NUMERIC_STD_UNSIGNED.all;
@@ -10,7 +16,7 @@ end;
 
 architecture test of testbench is
 	component top
-		port(clk, reset:           in  STD_LOGIC;
+		port(clk, reset:          in  STD_LOGIC;
 			writedata, dataadr:   out STD_LOGIC_VECTOR(31 downto 0);
 			memwrite:             out STD_LOGIC);
 	end component;
@@ -353,7 +359,7 @@ library IEEE; use IEEE.STD_LOGIC_1164.all;
 entity maindec is -- main control decoder
 	port(op:                 					in  STD_LOGIC_VECTOR(5 downto 0);
 		memtoreg, memwrite: 					out STD_LOGIC;
-		branch, alusrc, branch_notequal:     out STD_LOGIC;
+		branch, alusrc, branch_notequal:        out STD_LOGIC;
 		regdst, regwrite:   					out STD_LOGIC;
 		jump:               					out STD_LOGIC;
 		aluop:              					out STD_LOGIC_VECTOR(1 downto 0));
@@ -486,7 +492,7 @@ architecture struct of datapath is
 			Q: out std_logic_vector (N-1 downto 0) );
 	end component;
 	component hazard 
-		port(WriteRegE, WriteRegM, WriteRegW:                     in STD_LOGIC_VECTOR(4 downto 0);
+		port(WriteRegE, WriteRegM, WriteRegW:                      in STD_LOGIC_VECTOR(4 downto 0);
 			RsD, RtD, RtE, RsE:                                    in STD_LOGIC_VECTOR(4 downto 0);
 			MemtoRegE, MemtoRegM, RegWriteE, RegWriteM, RegWriteW: in STD_LOGIC;
 			BranchD, Branch_neD:                                   in STD_LOGIC;
@@ -511,10 +517,10 @@ architecture struct of datapath is
 	signal WriteDataM,WriteDataD    : STD_LOGIC_VECTOR(31 downto 0);
 	signal ALUOutE, ALUOutM, ALUOutW: STD_LOGIC_VECTOR(31 downto 0);
 	signal ReadDataW                : STD_LOGIC_VECTOR(31 downto 0);
-	signal s_PCNextBR                 : STD_LOGIC_VECTOR(31 downto 0);
+	signal s_PCNextBR               : STD_LOGIC_VECTOR(31 downto 0);
 	signal ZeroE, ZeroM             : STD_LOGIC_VECTOR(0 downto 0);
 	signal ForwardAE, ForwardBE     : STD_LOGIC_VECTOR(1 downto 0);
-	signal StallF, s_StallD, FlushE   : STD_LOGIC;
+	signal StallF, s_StallD, FlushE : STD_LOGIC;
 	signal ForwardAD, ForwardBD     : STD_LOGIC;
 	signal CompareOne, CompareTwo   : STD_LOGIC_VECTOR(31 downto 0);
 begin
@@ -549,12 +555,12 @@ begin
 	se: signext port map(instr(15 downto 0), signimm);
 	
 	-- ALU logic
-	segundoMux4: mux4 generic map(32) port map(WriteDataE, WriteRegW, ALUOutM, "00000000000000000000000000000000", ForwardBE, WriteDataE2);
+	segundoMux4: mux4 generic map(32) port map(WriteDataE, WriteRegW&"000000000000000000000000000", ALUOutM, "00000000000000000000000000000000", ForwardBE, WriteDataE2);
 	
 	srcbmux: mux2 generic map(32) port map(WriteDataE2, SignimmE, alusrc,
 		srcb);
 	
-	primeiroMux4: mux4 generic map(32) port map(SrcAE, WriteRegW, ALUOutM, "00000000000000000000000000000000", ForwardAE, SrcAE2);
+	primeiroMux4: mux4 generic map(32) port map(SrcAE, WriteRegW&"000000000000000000000000000", ALUOutM, "00000000000000000000000000000000", ForwardAE, SrcAE2);
 	
 	mainalu: alu port map(SrcAE2, srcb, alucontrol, ALUOutE, ZeroE(0));
 	
@@ -615,7 +621,7 @@ library IEEE; use IEEE.STD_LOGIC_1164.all;
 use IEEE.NUMERIC_STD_UNSIGNED.all;
 
 entity regfile is -- three-port register file
-	port(clk:           in  STD_LOGIC;
+	port(clk:          in  STD_LOGIC;
 		we3:           in  STD_LOGIC;
 		ra1, ra2, wa3: in  STD_LOGIC_VECTOR(4 downto 0);
 		wd3:           in  STD_LOGIC_VECTOR(31 downto 0);
