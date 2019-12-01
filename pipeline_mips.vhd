@@ -302,7 +302,7 @@ architecture struct of controller is
         Q: out std_logic_vector (N-1 downto 0) );
   end component;
   signal aluop                                                                                   : STD_LOGIC_VECTOR(1 downto 0);
-  signal RegWriteD, MemtoRegD, MemWriteD, BranchD, ALUSrcD, RegDstD, BranchNotEqualD			 : STD_LOGIC;
+  signal RegWriteD, MemtoRegD, MemWriteD, s_BranchD, ALUSrcD, RegDstD, BranchNotEqualD			 : STD_LOGIC;
   signal ALUControlD																			 : STD_LOGIC_VECTOR(2 downto 0);
   signal s_regE                                                                                  : STD_LOGIC_VECTOR(9 downto 0);
   signal s_regM                                                                                  : STD_LOGIC_VECTOR(4 downto 0);
@@ -311,19 +311,19 @@ architecture struct of controller is
   signal branch_notequal                                                                         : STD_LOGIC;
 
 begin
-  md: maindec port map(op, MemtoRegD, MemWriteD, BranchD,
+  md: maindec port map(op, MemtoRegD, MemWriteD, s_BranchD,
                        ALUSrcD, BranchNotEqualD, RegDstD, RegWriteD, jump, aluop);
   ad: aludec port map(funct, aluop, ALUControlD);
 
-  regE: registrador_n generic map (N => 10) port map (clk, '0', '1', RegWriteD & MemtoRegD & MemWriteD & BranchD & ALUControlD & ALUSrcD & RegDstD & BranchNotEqualD, s_regE);
+  regE: registrador_n generic map (N => 10) port map (clk, '0', '1', RegWriteD & MemtoRegD & MemWriteD & s_BranchD & ALUControlD & ALUSrcD & RegDstD & BranchNotEqualD, s_regE);
   
-  regM: registrador_n generic map (N => 5) port map (clk, '0', '1', s_regE(3 downto 0) & s_regE(7), s_regM);
+  regM: registrador_n generic map (N => 5) port map (clk, '0', '1', s_regE(3 downto 0) & s_regE(9), s_regM);
   
   regW: registrador_n generic map (N => 2) port map (clk, '0', '1', s_regM(1 downto 0), s_regW);
   
   pcsrc <= (branch and equalD) or (branch_notequal and not(equalD));
   
-  branchD <= BranchD;
+  branchD <= s_BranchD;
   branch_notequalD <= BranchNotEqualD;
   
   
@@ -338,7 +338,7 @@ begin
   -- Depois do segundo registrador
   memwrite         <= s_regM(2);
   branch           <= s_regM(3);
-  branch_notequal  <= s_regM(9);
+  branch_notequal  <= s_regM(4);
   memtoRegM        <= s_regM(1);
   regwriteM        <= s_regM(0);
   
@@ -476,7 +476,7 @@ architecture struct of datapath is
   component equal is 
 	port(a, b: in  STD_LOGIC_VECTOR(31 downto 0);
        y:    out STD_LOGIC);
-  end;
+  end component;
   component registrador_n
 	 generic (
        constant N: integer := 16 );
@@ -511,10 +511,10 @@ architecture struct of datapath is
   signal WriteDataM,WriteDataD    : STD_LOGIC_VECTOR(31 downto 0);
   signal ALUOutE, ALUOutM, ALUOutW: STD_LOGIC_VECTOR(31 downto 0);
   signal ReadDataW                : STD_LOGIC_VECTOR(31 downto 0);
-  signal PCNextBR                 : STD_LOGIC_VECTOR(31 downto 0);
+  signal s_PCNextBR                 : STD_LOGIC_VECTOR(31 downto 0);
   signal ZeroE, ZeroM             : STD_LOGIC_VECTOR(0 downto 0);
   signal ForwardAE, ForwardBE     : STD_LOGIC_VECTOR(1 downto 0);
-  signal StallF, StallD, FlushE   : STD_LOGIC;
+  signal StallF, s_StallD, FlushE   : STD_LOGIC;
   signal ForwardAD, ForwardBD     : STD_LOGIC;
   signal CompareOne, CompareTwo   : STD_LOGIC_VECTOR(31 downto 0);
 begin
@@ -523,13 +523,10 @@ begin
   pcreg: flopr generic map(32) port map(clk, reset, pcnext, pc);
   pcadd1: adder port map(pc, X"00000004", pcplus4);
   immsh: sl2 port map(SignimmE, signimmsh);
-  pcadd2: adder port map(PCPlus4E, signimmsh, pcbranch);
-  -- Tomar muito cuidado com isso, a minha interpretação pode estar errada
-  -- #####################################################################
+  pcadd2: adder port map(PCPlus4E, signimmsh, pcbranch);					 
   pcbrmux: mux2 generic map(32) port map(pcplus4, PCBranchM,
-                                         pcsrc, pcnextbr);
-  -- #####################################################################
-  pcmux: mux2 generic map(32) port map(PCNextBR, pcjump, jump, pcnext);
+                                         pcsrc, pcnextbr);									
+  pcmux: mux2 generic map(32) port map(s_PCNextBR, pcjump, jump, pcnext);
 
   -- register file logic
   rf: regfile port map(clk, regwrite, instr(25 downto 21),
@@ -552,25 +549,25 @@ begin
   se: signext port map(instr(15 downto 0), signimm);
 
   -- ALU logic
-  segundoMux4: mux4 generic(32) port map(WriteDataE, WriteRegW, ALUOutM, "00000000000000000000000000000000", ForwardBE, WriteDataE2);
+  segundoMux4: mux4 generic map(32) port map(WriteDataE, WriteRegW, ALUOutM, "00000000000000000000000000000000", ForwardBE, WriteDataE2);
   
   srcbmux: mux2 generic map(32) port map(WriteDataE2, SignimmE, alusrc,
                                          srcb);
 										 
-  primeiroMux4: mux4 generic(32) port map(SrcAE, WriteRegW, ALUOutM, "00000000000000000000000000000000", ForwardAE, SrcAE2);
+  primeiroMux4: mux4 generic map(32) port map(SrcAE, WriteRegW, ALUOutM, "00000000000000000000000000000000", ForwardAE, SrcAE2);
   
   mainalu: alu port map(SrcAE2, srcb, alucontrol, ALUOutE, ZeroE(0));
   
   -- Hazard Unit
   hazardUnit: hazard port map(writereg, WriteRegM, WriteRegW, instr(25 downto 21), instr(20 downto 16), RtE,
                               RsE, memtoRegE, memtoRegM, regwriteE, regwriteM, regwrite, branchD, branch_notequalD,
-							  ForwardAD, ForwardBD, ForwardAE, ForwardBE, StallF, StallD, FlushE);
+							  ForwardAD, ForwardBD, ForwardAE, ForwardBE, StallF, s_StallD, FlushE);
 	   
   -- Registrador do PC'
-  regPC: registrador_n generic map (N->32) port map (clk, '0', not(StallF), pcnextbr, PCNextBR)
+  regPC: registrador_n generic map (N=>32) port map (clk, '0', not(StallF), pcnextbr, s_PCNextBR);
   
   -- Registrador D
-  regD: registrador_n generic map (N => 32) port map(clk, pcsrc, not(StallD), pcplus4, PCPlus4D);
+  regD: registrador_n generic map (N => 32) port map(clk, pcsrc, not(s_StallD), pcplus4, PCPlus4D);
   
   -- Registrador E
   regE_PCPlus4D  : registrador_n generic map (N => 32) port map(clk, FlushE, '1', PCPlus4D, PCPlus4E);
@@ -593,7 +590,7 @@ begin
   regW_ALUOutW   : registrador_n generic map (N => 32) port map(clk, '0', '1', ALUOutM, ALUOutW);
   regW_ReadDataW : registrador_n generic map (N => 32) port map(clk, '0', '1', readdata, ReadDataW);
   
-  stallD <= StallD;
+  stallD <= s_StallD;
   writedata <= WriteDataM;
   aluout <= ALUOutM;
   
@@ -771,7 +768,6 @@ begin
   zero <= '1' when result = X"00000000" else '0';
 end;
 
--- ####################################################################
 library IEEE; use IEEE.STD_LOGIC_1164.all;
 use IEEE.NUMERIC_STD_UNSIGNED.all;
 
@@ -791,29 +787,32 @@ begin
 
   -- Logic for ForwardAE (pg. 589)
   process(all) begin
-    if ((RsE != "00000") and (RsE == WriteRegM) and RegWriteM) then ForwardAE <= "10";
-    elsif ((RsE != "00000") and (RsE == WriteRegW) and RegWriteW) then ForwardAE <= "01";
+    if ((RsE /= "00000") and (RsE = WriteRegM) and RegWriteM = '1') then ForwardAE <= "10";
+    elsif ((RsE /= "00000") and (RsE = WriteRegW) and RegWriteW = '1') then ForwardAE <= "01";
     else ForwardAE <= "00";
     end if;
   end process;
   
   -- Logic for ForwardBE (pg. 589)
   process(all) begin
-    if ((RtE != "00000") and (RtE == WriteRegM) and RegWriteM) then ForwardBE <= "10";
-    elsif ((RtE != "00000") and (RtE == WriteRegW) and RegWriteW) then ForwardBE <= "01";
+    if ((RtE /= "00000") and (RtE = WriteRegM) and RegWriteM = '1') then ForwardBE <= "10";
+    elsif ((RtE /= "00000") and (RtE = WriteRegW) and RegWriteW = '1') then ForwardBE <= "01";
     else ForwardBE <= "00";
     end if;
   end process;
 
   -- Logic for Stalls (pg. 597)
-  lwstall     <= ((RsD == RtE) or (RtD == RtE)) and MemtoRegE;
-  branchstall <= ((BranchD or Branch_neD) and RegWriteE and (WriteRegE == RsD or WriteRegE == RtD)) or ((BranchD or Branch_neD) and MemtoRegM and (WriteRegM == RsD or WriteRegM == RtD));
+  process(all) begin  
+   	if (((RsD = RtE) or (RtD = RtE)) and MemtoRegE = '1') then lwstall <= '1'; else lwstall <= '0'; end if;
+    if ((BranchD = '1' or Branch_neD = '1') and RegWriteE = '1' and (WriteRegE = RsD or WriteRegE = RtD)) or ((BranchD = '1' or Branch_neD = '1') and MemtoRegM = '1' and (WriteRegM = RsD or WriteRegM = RtD)) then branchstall <= '1'; else branchstall <= '0'; end if;
+  end process;
   StallD      <= lwstall or branchstall;
   StallF      <= lwstall or branchstall;
   FlushE      <= lwstall or branchstall;
 
   -- Logic for ForwardAD and Forward BD
-  ForwardAD   <= (RsD != "00000") and (RsD == WriteRegM) and RegWriteM;
-  ForwardBD   <= (RtD != "00000") and (RtD == WriteRegM) and RegWriteM;
+  process(all) begin
+    if (RsD /= "00000") and (RsD = WriteRegM) and RegWriteM = '1' then ForwardAD <= '1'; else ForwardAD <= '0'; end if;
+    if (RtD /= "00000") and (RtD = WriteRegM) and RegWriteM = '1' then ForwardBD <= '1'; else ForwardBD <= '0'; end if;
+  end process;
 end;
--- ####################################################################
